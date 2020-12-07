@@ -3,6 +3,7 @@ package clients
 import (
 	"context"
 	"fmt"
+	"github.com/terraform-providers/terraform-provider-azuread/internal/common"
 
 	"github.com/hashicorp/go-azure-helpers/authentication"
 	"github.com/hashicorp/go-azure-helpers/sender"
@@ -56,7 +57,7 @@ func (b *ClientBuilder) Build(ctx context.Context) (*Client, error) {
 		return nil, err
 	}
 
-	o := &clientOptions{
+	o := &common.ClientOptions{
 		AadGraphAuthorizer: aadGraphAuthorizer,
 		AadGraphEndpoint:   aadGraphEndpoint,
 		PartnerID:          b.PartnerID,
