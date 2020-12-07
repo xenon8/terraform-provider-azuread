@@ -21,6 +21,9 @@ type ClientOptions struct {
 	PartnerID        string
 	TerraformVersion string
 
+	AadGraphAuthorizer autorest.Authorizer
+	AadGraphEndpoint   string
+
 	SkipProviderReg bool
 }
 
