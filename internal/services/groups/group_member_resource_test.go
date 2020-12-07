@@ -3,6 +3,7 @@ package groups_test
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -141,22 +142,39 @@ func (r GroupMemberResource) Exists(ctx context.Context, clients *clients.Client
 		return nil, fmt.Errorf("parsing Group Member ID: %v", err)
 	}
 
-	if resp, err := clients.Groups.GroupsClient.Get(ctx, id.GroupId); err != nil {
-		if utils.ResponseWasNotFound(resp.Response) {
-			return nil, fmt.Errorf("Group with object ID %q does not exist", id.GroupId)
+	switch clients.EnableMsGraphBeta {
+	case true:
+		members, _, err := clients.Groups.MsClient.ListMembers(ctx, id.GroupId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve Group members (groupId: %q): %+v", id.GroupId, err)
 		}
 
-		return nil, fmt.Errorf("failed to retrieve Group with object ID %q: %+v", id.GroupId, err)
-	}
+		if members != nil {
+			for _, objectId := range *members {
+				if strings.EqualFold(objectId, id.MemberId) {
+					return utils.Bool(true), nil
+				}
+			}
+		}
 
-	members, err := aadgraph.GroupAllMembers(ctx, clients.Groups.GroupsClient, id.GroupId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve Group members (groupId: %q): %+v", id.GroupId, err)
-	}
+	case false:
 
-	for _, memberId := range members {
-		if memberId == id.MemberId {
-			return utils.Bool(true), nil
+		if resp, err := clients.Groups.AadClient.Get(ctx, id.GroupId); err != nil {
+			if utils.ResponseWasNotFound(resp.Response) {
+				return nil, fmt.Errorf("Group with object ID %q does not exist", id.GroupId)
+			}
+			return nil, fmt.Errorf("failed to retrieve Group with object ID %q: %+v", id.GroupId, err)
+		}
+
+		members, err := aadgraph.GroupAllMembers(ctx, clients.Groups.AadClient, id.GroupId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve Group members (groupId: %q): %+v", id.GroupId, err)
+		}
+
+		for _, memberId := range members {
+			if memberId == id.MemberId {
+				return utils.Bool(true), nil
+			}
 		}
 	}
 

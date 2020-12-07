@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"github.com/manicminer/hamilton/auth"
 	"log"
 	"os"
 	"strings"
@@ -23,6 +24,8 @@ type ClientOptions struct {
 
 	AadGraphAuthorizer autorest.Authorizer
 	AadGraphEndpoint   string
+
+	MsGraphAuthorizer auth.Authorizer
 
 	SkipProviderReg bool
 }

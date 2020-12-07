@@ -3,6 +3,7 @@ package clients
 import (
 	"context"
 	"fmt"
+	"github.com/manicminer/hamilton/auth"
 	"github.com/terraform-providers/terraform-provider-azuread/internal/common"
 
 	"github.com/hashicorp/go-azure-helpers/authentication"
@@ -11,12 +12,13 @@ import (
 
 type ClientBuilder struct {
 	AuthConfig       *authentication.Config
+	EnableMsGraph    bool
 	PartnerID        string
 	TerraformVersion string
 }
 
 // Build is a helper method which returns a fully instantiated *Client based on the auth Config's current settings.
-func (b *ClientBuilder) Build(ctx context.Context) (*Client, error) {
+func (b *ClientBuilder) Build(ctx context.Context, clientSecret string) (*Client, error) {
 	env, err := authentication.AzureEnvironmentByNameFromEndpoint(ctx, b.AuthConfig.MetadataHost, b.AuthConfig.Environment)
 	if err != nil {
 		return nil, err
@@ -41,6 +43,7 @@ func (b *ClientBuilder) Build(ctx context.Context) (*Client, error) {
 		Environment:      *env,
 
 		AuthenticatedAsAServicePrincipal: b.AuthConfig.AuthenticatedAsAServicePrincipal,
+		EnableMsGraphBeta:                b.EnableMsGraph,
 	}
 
 	sender := sender.BuildSender("AzureAD")
@@ -57,9 +60,13 @@ func (b *ClientBuilder) Build(ctx context.Context) (*Client, error) {
 		return nil, err
 	}
 
+	// MS Graph
+	msGraphAuthorizer := auth.NewClientSecretAuthorizer(ctx, b.AuthConfig.ClientID, clientSecret, b.AuthConfig.TenantID)
+
 	o := &common.ClientOptions{
 		AadGraphAuthorizer: aadGraphAuthorizer,
 		AadGraphEndpoint:   aadGraphEndpoint,
+		MsGraphAuthorizer:  msGraphAuthorizer,
 		PartnerID:          b.PartnerID,
 		TenantID:           b.AuthConfig.TenantID,
 		TerraformVersion:   b.TerraformVersion,
