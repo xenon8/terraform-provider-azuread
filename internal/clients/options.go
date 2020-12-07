@@ -1,4 +1,4 @@
-package services
+package clients
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ import (
 	"github.com/terraform-providers/terraform-provider-azuread/version"
 )
 
-type ClientOptions struct {
+type clientOptions struct {
 	TenantID    string
 	Environment azure.Environment
 
@@ -27,7 +27,7 @@ type ClientOptions struct {
 	SkipProviderReg bool
 }
 
-func (o ClientOptions) ConfigureClient(c *autorest.Client, authorizer autorest.Authorizer) {
+func (o clientOptions) ConfigureClient(c *autorest.Client, authorizer autorest.Authorizer) {
 	setUserAgent(c, o.TerraformVersion, o.PartnerID)
 
 	c.Authorizer = authorizer

@@ -6,8 +6,6 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 
-	"github.com/terraform-providers/terraform-provider-azuread/internal/services"
-
 	applications "github.com/terraform-providers/terraform-provider-azuread/internal/services/applications/client"
 	domains "github.com/terraform-providers/terraform-provider-azuread/internal/services/domains/client"
 	groups "github.com/terraform-providers/terraform-provider-azuread/internal/services/groups/client"
@@ -34,7 +32,7 @@ type Client struct {
 	Users             *users.Client
 }
 
-func (client *Client) Build(ctx context.Context, o *services.ClientOptions) error {
+func (client *Client) build(ctx context.Context, o *clientOptions) error {
 	autorest.Count429AsRetry = false
 	client.StopContext = ctx
 

@@ -6,8 +6,6 @@ import (
 
 	"github.com/hashicorp/go-azure-helpers/authentication"
 	"github.com/hashicorp/go-azure-helpers/sender"
-
-	"github.com/terraform-providers/terraform-provider-azuread/internal/services"
 )
 
 type ClientBuilder struct {
@@ -58,7 +56,7 @@ func (b *ClientBuilder) Build(ctx context.Context) (*Client, error) {
 		return nil, err
 	}
 
-	o := &services.ClientOptions{
+	o := &clientOptions{
 		AadGraphAuthorizer: aadGraphAuthorizer,
 		AadGraphEndpoint:   aadGraphEndpoint,
 		PartnerID:          b.PartnerID,
@@ -67,7 +65,7 @@ func (b *ClientBuilder) Build(ctx context.Context) (*Client, error) {
 		Environment:        *env,
 	}
 
-	if err := client.Build(ctx, o); err != nil {
+	if err := client.build(ctx, o); err != nil {
 		return nil, fmt.Errorf("Error building Client: %+v", err)
 	}
 
