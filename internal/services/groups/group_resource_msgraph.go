@@ -2,7 +2,7 @@ package groups
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"log"
 	"net/http"
 
@@ -23,15 +23,18 @@ func groupResourceCreateMsGraph(ctx context.Context, d *schema.ResourceData, met
 	displayName := d.Get("name").(string)
 
 	if d.Get("prevent_duplicate_names").(bool) {
-		err := msgraph.GroupCheckNameAvailability(ctx, client, displayName, nil)
+		existingId, err := msgraph.GroupCheckNameAvailability(ctx, client, displayName, nil)
 		if err != nil {
-			return tf.ErrorDiag(err.Error(), "", "name")
+			return tf.ErrorDiagPathF(err, "name", "Could not check for existing group(s)")
+		}
+		if existingId != nil {
+			return tf.ImportAsDuplicateDiag("azuread_group", *existingId, displayName)
 		}
 	}
 
 	mailNickname, err := uuid.GenerateUUID()
 	if err != nil {
-		return tf.ErrorDiag("Failed to generate mailNickname", err.Error(), "")
+		return tf.ErrorDiagF(err, "Failed to generate mailNickname")
 	}
 
 	properties := models.Group{
@@ -63,11 +66,11 @@ func groupResourceCreateMsGraph(ctx context.Context, d *schema.ResourceData, met
 
 	group, _, err := client.Create(ctx, properties)
 	if err != nil {
-		return tf.ErrorDiag(fmt.Sprintf("Creating group %q", displayName), err.Error(), "")
+		return tf.ErrorDiagF(err, "Creating group %q", displayName)
 	}
 
 	if group.ID == nil {
-		return tf.ErrorDiag("Bad API response", "API returned group with nil object ID", "")
+		return tf.ErrorDiagF(errors.New("API returned group with nil object ID"), "Bad API Response")
 	}
 
 	d.SetId(*group.ID)
@@ -77,7 +80,7 @@ func groupResourceCreateMsGraph(ctx context.Context, d *schema.ResourceData, met
 	})
 
 	if err != nil {
-		return tf.ErrorDiag(fmt.Sprintf("Waiting for Group with object ID: %q", *group.ID), err.Error(), "")
+		return tf.ErrorDiagF(err, "Waiting for Group with object ID: %q", *group.ID)
 	}
 
 	return groupResourceReadMsGraph(ctx, d, meta)
@@ -93,37 +96,37 @@ func groupResourceReadMsGraph(ctx context.Context, d *schema.ResourceData, meta 
 			d.SetId("")
 			return nil
 		}
-		return tf.ErrorDiag(fmt.Sprintf("Retrieving group with object ID: %q", d.Id()), err.Error(), "")
+		return tf.ErrorDiagF(err, "Retrieving group with object ID: %q", d.Id())
 	}
 
-	if err := d.Set("object_id", group.ID); err != nil {
-		return tf.ErrorDiag("Could not set attribute", err.Error(), "object_id")
+	if dg := tf.Set(d, "object_id", group.ID); dg != nil {
+		return dg
 	}
 
-	if err := d.Set("name", group.DisplayName); err != nil {
-		return tf.ErrorDiag("Could not set attribute", err.Error(), "name")
+	if dg := tf.Set(d, "name", group.DisplayName); dg != nil {
+		return dg
 	}
 
-	if err := d.Set("description", group.Description); err != nil {
-		return tf.ErrorDiag("Could not set attribute", err.Error(), "description")
+	if dg := tf.Set(d, "description", group.Description); dg != nil {
+		return dg
 	}
 
 	owners, _, err := client.ListOwners(ctx, *group.ID)
 	if err != nil {
-		return tf.ErrorDiag(fmt.Sprintf("Could not retrieve owners for group with ID: %q", d.Id()), err.Error(), "")
+		return tf.ErrorDiagPathF(err, "owners", "Could not retrieve owners for group with object ID %q", d.Id())
 	}
 
-	if err := d.Set("owners", owners); err != nil {
-		return tf.ErrorDiag("Could not set attribute", err.Error(), "owners")
+	if dg := tf.Set(d, "owners", owners); dg != nil {
+		return dg
 	}
 
 	members, _, err := client.ListMembers(ctx, *group.ID)
 	if err != nil {
-		return tf.ErrorDiag(fmt.Sprintf("Could not retrieve members for group with ID: %q", d.Id()), err.Error(), "")
+		return tf.ErrorDiagPathF(err, "owners", "Could not retrieve members for group with object ID %q", d.Id())
 	}
 
-	if err := d.Set("members", members); err != nil {
-		return tf.ErrorDiag("Could not set attribute", err.Error(), "members")
+	if dg := tf.Set(d, "members", members); dg != nil {
+		return dg
 	}
 
 	preventDuplicates := false
@@ -131,8 +134,8 @@ func groupResourceReadMsGraph(ctx context.Context, d *schema.ResourceData, meta 
 		preventDuplicates = v
 	}
 
-	if err := d.Set("prevent_duplicate_names", preventDuplicates); err != nil {
-		return tf.ErrorDiag("Could not set attribute", err.Error(), "prevent_duplicate_names")
+	if dg := tf.Set(d, "prevent_duplicate_names", preventDuplicates); dg != nil {
+		return dg
 	}
 
 	return nil
@@ -145,10 +148,15 @@ func groupResourceUpdateMsGraph(ctx context.Context, d *schema.ResourceData, met
 
 	if d.HasChange("display_name") {
 		if preventDuplicates := d.Get("prevent_duplicate_names").(bool); preventDuplicates {
-			if err := msgraph.GroupCheckNameAvailability(ctx, client, displayName, group.ID); err != nil {
-				return tf.ErrorDiag(err.Error(), "", "name")
+			existingId, err := msgraph.GroupCheckNameAvailability(ctx, client, displayName, group.ID)
+			if err != nil {
+				return tf.ErrorDiagPathF(err, "name", "Could not check for existing group(s)")
+			}
+			if existingId != nil {
+				return tf.ImportAsDuplicateDiag("azuread_group", *existingId, displayName)
 			}
 		}
+
 		group.DisplayName = utils.String(displayName)
 	}
 
@@ -157,13 +165,13 @@ func groupResourceUpdateMsGraph(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	if _, err := client.Update(ctx, group); err != nil {
-		return tf.ErrorDiag(fmt.Sprintf("Updating group with ID: %q", d.Id()), err.Error(), "")
+		return tf.ErrorDiagF(err, "Updating group with ID: %q", d.Id())
 	}
 
 	if v, ok := d.GetOkExists("members"); ok && d.HasChange("members") { //nolint:SA1019
 		members, _, err := client.ListMembers(ctx, *group.ID)
 		if err != nil {
-			return tf.ErrorDiag(fmt.Sprintf("Could not retrieve members for group with ID: %q", d.Id()), err.Error(), "")
+			return tf.ErrorDiagF(err, "Could not retrieve members for group with ID: %q", d.Id())
 		}
 
 		existingMembers := *members
@@ -173,7 +181,7 @@ func groupResourceUpdateMsGraph(ctx context.Context, d *schema.ResourceData, met
 
 		if membersForRemoval != nil {
 			if _, err = client.RemoveMembers(ctx, d.Id(), &membersForRemoval); err != nil {
-				return tf.ErrorDiag(fmt.Sprintf("Could not remove members from group with ID: %q", d.Id()), err.Error(), "")
+				return tf.ErrorDiagF(err, "Could not remove members from group with ID: %q", d.Id())
 			}
 		}
 
@@ -183,7 +191,7 @@ func groupResourceUpdateMsGraph(ctx context.Context, d *schema.ResourceData, met
 			}
 
 			if _, err := client.AddMembers(ctx, &group); err != nil {
-				return tf.ErrorDiag(fmt.Sprintf("Could not add members to group with ID: %q", d.Id()), err.Error(), "")
+				return tf.ErrorDiagF(err, "Could not add members to group with ID: %q", d.Id())
 			}
 		}
 	}
@@ -191,7 +199,7 @@ func groupResourceUpdateMsGraph(ctx context.Context, d *schema.ResourceData, met
 	if v, ok := d.GetOkExists("owners"); ok && d.HasChange("owners") { //nolint:SA1019
 		owners, _, err := client.ListOwners(ctx, *group.ID)
 		if err != nil {
-			return tf.ErrorDiag(fmt.Sprintf("Could not retrieve eowners for group with ID: %q", d.Id()), err.Error(), "")
+			return tf.ErrorDiagF(err, "Could not retrieve eowners for group with ID: %q", d.Id())
 		}
 
 		existingOwners := *owners
@@ -201,7 +209,7 @@ func groupResourceUpdateMsGraph(ctx context.Context, d *schema.ResourceData, met
 
 		if ownersForRemoval != nil {
 			if _, err = client.RemoveOwners(ctx, d.Id(), &ownersForRemoval); err != nil {
-				return tf.ErrorDiag(fmt.Sprintf("Could not remove owners from group with ID: %q", d.Id()), err.Error(), "")
+				return tf.ErrorDiagF(err, "Could not remove owners from group with ID: %q", d.Id())
 			}
 		}
 
@@ -211,7 +219,7 @@ func groupResourceUpdateMsGraph(ctx context.Context, d *schema.ResourceData, met
 			}
 
 			if _, err := client.AddOwners(ctx, &group); err != nil {
-				return tf.ErrorDiag(fmt.Sprintf("Could not add owners to group with ID: %q", d.Id()), err.Error(), "")
+				return tf.ErrorDiagF(err, "Could not add owners to group with ID: %q", d.Id())
 			}
 		}
 	}
@@ -223,7 +231,7 @@ func groupResourceDeleteMsGraph(ctx context.Context, d *schema.ResourceData, met
 	client := meta.(*clients.Client).Groups.MsClient
 
 	if _, err := client.Delete(ctx, d.Id()); err != nil {
-		return tf.ErrorDiag(fmt.Sprintf("Deleting group with object ID: %q", d.Id()), err.Error(), "")
+		return tf.ErrorDiagF(err, "Deleting group with object ID: %q", d.Id())
 	}
 
 	return nil

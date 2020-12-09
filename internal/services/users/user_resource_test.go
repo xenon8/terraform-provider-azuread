@@ -116,9 +116,9 @@ data "azuread_domains" "test" {
 }
 
 resource "azuread_user" "test" {
-  user_principal_name = "acctestUser.%[2]d@${data.azuread_domains.test.domains.0.domain_name}"
-  display_name        = "acctestUser-%[2]d"
-  password            = "%[3]s"
+  user_principal_name = "acctestUser.%[1]d@${data.azuread_domains.test.domains.0.domain_name}"
+  display_name        = "acctestUser-%[1]d"
+  password            = "%[2]s"
 }
 `, data.RandomInteger, data.RandomPassword)
 }
@@ -130,29 +130,29 @@ data "azuread_domains" "test" {
 }
 
 resource "azuread_user" "test" {
-  user_principal_name   = "acctestUser.%[2]d@${data.azuread_domains.test.domains.0.domain_name}"
+  user_principal_name   = "acctestUser.%[1]d@${data.azuread_domains.test.domains.0.domain_name}"
   force_password_change = true
 
-  display_name    = "acctestUser-%[2]d-DisplayName"
-  given_name      = "acctestUser-%[2]d-GivenName"
-  surname         = "acctestUser-%[2]d-Surname"
-  mail_nickname   = "acctestUser-%[2]d-MailNickname"
+  display_name    = "acctestUser-%[1]d-DisplayName"
+  given_name      = "acctestUser-%[1]d-GivenName"
+  surname         = "acctestUser-%[1]d-Surname"
+  mail_nickname   = "acctestUser-%[1]d-MailNickname"
   account_enabled = false
-  password        = "%[3]s"
+  password        = "%[2]s"
   usage_location  = "NO"
-  immutable_id    = "%[2]d"
+  immutable_id    = "%[1]d"
 
-  job_title      = "acctestUser-%[2]d-Job"
-  department     = "acctestUser-%[2]d-Dept"
-  company_name   = "acctestUser-%[2]d-Company"
-  street_address = "acctestUser-%[2]d-Street"
-  state          = "acctestUser-%[2]d-State"
-  city           = "acctestUser-%[2]d-City"
-  country        = "acctestUser-%[2]d-Country"
+  job_title      = "acctestUser-%[1]d-Job"
+  department     = "acctestUser-%[1]d-Dept"
+  company_name   = "acctestUser-%[1]d-Company"
+  street_address = "acctestUser-%[1]d-Street"
+  state          = "acctestUser-%[1]d-State"
+  city           = "acctestUser-%[1]d-City"
+  country        = "acctestUser-%[1]d-Country"
   postal_code    = "111111"
   mobile         = "(555) 555-5555"
 
-  physical_delivery_office_name = "acctestUser-%[2]d-PDON"
+  physical_delivery_office_name = "acctestUser-%[1]d-PDON"
 }
 `, data.RandomInteger, data.RandomPassword)
 }
@@ -164,22 +164,22 @@ data "azuread_domains" "test" {
 }
 
 resource "azuread_user" "testA" {
-  user_principal_name = "acctestUser.%[2]d.A@${data.azuread_domains.test.domains.0.domain_name}"
-  display_name        = "acctestUser-%[2]d-A"
-  password            = "%[3]s"
+  user_principal_name = "acctestUser.%[1]d.A@${data.azuread_domains.test.domains.0.domain_name}"
+  display_name        = "acctestUser-%[1]d-A"
+  password            = "%[2]s"
 }
 
 resource "azuread_user" "testB" {
-  user_principal_name = "acctestUser.%[2]d.B@${data.azuread_domains.test.domains.0.domain_name}"
-  display_name        = "acctestUser-%[2]d-B"
-  mail_nickname       = "acctestUser-%[2]d-B"
-  password            = "%[3]s"
+  user_principal_name = "acctestUser.%[1]d.B@${data.azuread_domains.test.domains.0.domain_name}"
+  display_name        = "acctestUser-%[1]d-B"
+  mail_nickname       = "acctestUser-%[1]d-B"
+  password            = "%[2]s"
 }
 
 resource "azuread_user" "testC" {
-  user_principal_name = "acctestUser.%[2]d.C@${data.azuread_domains.test.domains.0.domain_name}"
-  display_name        = "acctestUser-%[2]d-C"
-  password            = "%[3]s"
+  user_principal_name = "acctestUser.%[1]d.C@${data.azuread_domains.test.domains.0.domain_name}"
+  display_name        = "acctestUser-%[1]d-C"
+  password            = "%[2]s"
 }
 `, data.RandomInteger, data.RandomPassword)
 }

@@ -9,7 +9,7 @@ type Client struct {
 	ServicePrincipalsClient *graphrbac.ServicePrincipalsClient
 }
 
-func BuildClient(o *common.ClientOptions) *Client {
+func NewClient(o *common.ClientOptions) *Client {
 	servicePrincipalsClient := graphrbac.NewServicePrincipalsClientWithBaseURI(o.AadGraphEndpoint, o.TenantID)
 	o.ConfigureClient(&servicePrincipalsClient.Client, o.AadGraphAuthorizer)
 

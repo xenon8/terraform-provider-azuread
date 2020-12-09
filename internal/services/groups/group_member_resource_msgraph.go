@@ -2,8 +2,6 @@ package groups
 
 import (
 	"context"
-	"fmt"
-	"github.com/terraform-providers/terraform-provider-azuread/internal/helpers/msgraph"
 	"log"
 	"net/http"
 	"strings"
@@ -13,6 +11,7 @@ import (
 
 	"github.com/terraform-providers/terraform-provider-azuread/internal/clients"
 	"github.com/terraform-providers/terraform-provider-azuread/internal/helpers/aadgraph"
+	"github.com/terraform-providers/terraform-provider-azuread/internal/helpers/msgraph"
 	"github.com/terraform-providers/terraform-provider-azuread/internal/tf"
 )
 
@@ -30,14 +29,14 @@ func groupMemberResourceCreateMsGraph(ctx context.Context, d *schema.ResourceDat
 	group, status, err := client.Get(ctx, groupId)
 	if err != nil {
 		if status == http.StatusNotFound {
-			return tf.ErrorDiag(fmt.Sprintf("Group with object ID %q was not found", groupId), "", "group_id")
+			return tf.ErrorDiagPathF(nil, "object_id", "Group with object ID %q was not found", groupId)
 		}
-		return tf.ErrorDiag(fmt.Sprintf("Retrieving group with object ID: %q", groupId), err.Error(), "")
+		return tf.ErrorDiagPathF(err, "object_id", "Retrieving group with object ID: %q", groupId)
 	}
 
 	existingMembers, _, err := client.ListMembers(ctx, id.GroupId)
 	if err != nil {
-		return tf.ErrorDiag(fmt.Sprintf("Listing existing members for group with object ID: %q", id.GroupId), err.Error(), "")
+		return tf.ErrorDiagF(err, "Listing existing members for group with object ID: %q", id.GroupId)
 	}
 	if existingMembers != nil {
 		for _, v := range *existingMembers {
@@ -50,7 +49,7 @@ func groupMemberResourceCreateMsGraph(ctx context.Context, d *schema.ResourceDat
 	group.AppendMember(client.BaseClient.Endpoint, client.BaseClient.ApiVersion, memberId)
 
 	if _, err := client.AddMembers(ctx, group); err != nil {
-		return tf.ErrorDiag(fmt.Sprintf("Adding group member %q to group %q", memberId, groupId), err.Error(), "")
+		return tf.ErrorDiagF(err, "Adding group member %q to group %q", memberId, groupId)
 	}
 
 	d.SetId(id.String())
@@ -62,12 +61,12 @@ func groupMemberResourceReadMsGraph(ctx context.Context, d *schema.ResourceData,
 
 	id, err := aadgraph.ParseGroupMemberId(d.Id())
 	if err != nil {
-		return tf.ErrorDiag(fmt.Sprintf("Parsing Group Member ID %q", d.Id()), err.Error(), "id")
+		return tf.ErrorDiagPathF(err, "id", "Parsing Group Member ID %q", d.Id())
 	}
 
 	members, _, err := client.ListMembers(ctx, id.GroupId)
 	if err != nil {
-		return tf.ErrorDiag(fmt.Sprintf("Retrieving members for group with object ID: %q", id.GroupId), err.Error(), "")
+		return tf.ErrorDiagF(err, "Retrieving members for group with object ID: %q", id.GroupId)
 	}
 
 	var memberObjectId string
@@ -86,12 +85,12 @@ func groupMemberResourceReadMsGraph(ctx context.Context, d *schema.ResourceData,
 		return nil
 	}
 
-	if err := d.Set("group_object_id", id.GroupId); err != nil {
-		return tf.ErrorDiag("Could not set attribute", err.Error(), "group_object_id")
+	if dg := tf.Set(d, "group_object_id", id.GroupId); dg != nil {
+		return dg
 	}
 
-	if err := d.Set("member_object_id", memberObjectId); err != nil {
-		return tf.ErrorDiag("Could not set attribute", err.Error(), "member_object_id")
+	if dg := tf.Set(d, "member_object_id", memberObjectId); dg != nil {
+		return dg
 	}
 
 	return nil
@@ -102,14 +101,14 @@ func groupMemberResourceDeleteMsGraph(ctx context.Context, d *schema.ResourceDat
 
 	id, err := aadgraph.ParseGroupMemberId(d.Id())
 	if err != nil {
-		return tf.ErrorDiag(fmt.Sprintf("Parsing Group Member ID %q", d.Id()), err.Error(), "id")
+		return tf.ErrorDiagPathF(err, "id", "Parsing Group Member ID %q", d.Id())
 	}
 
 	tf.LockByName(groupMemberResourceName, id.GroupId)
 	defer tf.UnlockByName(groupMemberResourceName, id.GroupId)
 
 	if _, err := client.RemoveMembers(ctx, id.GroupId, &[]string{id.MemberId}); err != nil {
-		return tf.ErrorDiag(fmt.Sprintf("Removing member %q from group with object ID: %q", id.MemberId, id.GroupId), err.Error(), "")
+		return tf.ErrorDiagF(err, "Removing member %q from group with object ID: %q", id.MemberId, id.GroupId)
 	}
 
 	if _, err := msgraph.WaitForListRemove(ctx, id.MemberId, func() ([]string, error) {
@@ -119,7 +118,7 @@ func groupMemberResourceDeleteMsGraph(ctx context.Context, d *schema.ResourceDat
 		}
 		return *members, err
 	}); err != nil {
-		return tf.ErrorDiag("Waiting for group membership removal", err.Error(), "")
+		return tf.ErrorDiagF(err, "Waiting for group membership removal")
 	}
 
 	return nil

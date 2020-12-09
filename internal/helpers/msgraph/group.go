@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/manicminer/hamilton/clients"
-	"github.com/manicminer/hamilton/models"
 )
 
 type GroupMemberId struct {
@@ -23,29 +22,21 @@ func GroupMemberIdFrom(groupId, memberId string) GroupMemberId {
 	}
 }
 
-func GroupCheckNameAvailability(ctx context.Context, client *clients.GroupsClient, displayName string, existingId *string) error {
+func GroupCheckNameAvailability(ctx context.Context, client *clients.GroupsClient, displayName string, existingID *string) (*string, error) {
 	filter := fmt.Sprintf("displayName eq '%s'", displayName)
 	result, _, err := client.List(ctx, filter)
 	if err != nil {
-		return fmt.Errorf("unable to list existing groups: %+v", err)
+		return nil, fmt.Errorf("unable to list groups: %+v", err)
 	}
 
-	var existing []models.Group
 	for _, r := range *result {
-		if existingId != nil && *r.ID == *existingId {
+		if existingID != nil && *existingID == *r.ID {
 			continue
 		}
 		if strings.EqualFold(displayName, *r.DisplayName) {
-			existing = append(existing, r)
+			return r.ID, nil
 		}
 	}
-	count := len(existing)
-	if count > 0 {
-		noun := "group was"
-		if count > 1 {
-			noun = "groups were"
-		}
-		return fmt.Errorf("`prevent_duplicate_names` was specified and %d existing %s found with display_name %q", count, noun, displayName)
-	}
-	return nil
+
+	return nil, nil
 }

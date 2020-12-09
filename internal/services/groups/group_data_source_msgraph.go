@@ -2,6 +2,7 @@ package groups
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -22,64 +23,64 @@ func groupDataSourceReadMsGraph(ctx context.Context, d *schema.ResourceData, met
 		g, status, err := client.Get(ctx, objectId)
 		if err != nil {
 			if status == http.StatusNotFound {
-				return tf.ErrorDiag(fmt.Sprintf("No group found with object ID: %q", objectId), "", "object_id")
+				return tf.ErrorDiagPathF(nil, "object_id", "No group found with object ID: %q", objectId)
 			}
-			return tf.ErrorDiag(fmt.Sprintf("Retrieving group with object ID: %q", objectId), err.Error(), "")
+			return tf.ErrorDiagPathF(err, "object_id", "Retrieving group with object ID: %q", objectId)
 		}
 		group = *g
 	} else if displayName, ok := d.Get("name").(string); ok && displayName != "" {
 		filter := fmt.Sprintf("displayName eq '%s'", displayName)
 		groups, _, err := client.List(ctx, filter)
 		if err != nil {
-			return tf.ErrorDiag(fmt.Sprintf("No group found with display name: %q", displayName), err.Error(), "name")
+			return tf.ErrorDiagPathF(err, "name", "No group found with display name: %q", displayName)
 		}
 
 		count := len(*groups)
 		if count > 1 {
-			return tf.ErrorDiag(fmt.Sprintf("More than one group found with display name: %q", displayName), err.Error(), "name")
+			return tf.ErrorDiagPathF(nil, "name", "More than one group found with display name: %q", displayName)
 		} else if count == 0 {
-			return tf.ErrorDiag(fmt.Sprintf("No group found with display name: %q", displayName), err.Error(), "name")
+			return tf.ErrorDiagPathF(err, "name", "No group found with display name: %q", displayName)
 		}
 
 		group = (*groups)[0]
 	} else {
-		return tf.ErrorDiag("One of `object_id` or `name` must be specified", "", "")
+		return tf.ErrorDiagF(nil, "One of `object_id` or `name` must be specified")
 	}
 
 	if group.ID == nil {
-		return tf.ErrorDiag("Bad API response", "API returned group with nil object ID", "")
+		return tf.ErrorDiagF(errors.New("API returned group with nil object ID"), "Bad API Response")
 	}
 
 	d.SetId(*group.ID)
 
-	if err := d.Set("object_id", group.ID); err != nil {
-		return tf.ErrorDiag("Could not set attribute", err.Error(), "object_id")
+	if dg := tf.Set(d, "object_id", group.ID); dg != nil {
+		return dg
 	}
 
-	if err := d.Set("name", group.DisplayName); err != nil {
-		return tf.ErrorDiag("Could not set attribute", err.Error(), "name")
+	if dg := tf.Set(d, "name", group.DisplayName); dg != nil {
+		return dg
 	}
 
-	if err := d.Set("description", group.Description); err != nil {
-		return tf.ErrorDiag("Could not set attribute", err.Error(), "description")
+	if dg := tf.Set(d, "description", group.Description); dg != nil {
+		return dg
 	}
 
 	members, _, err := client.ListMembers(ctx, d.Id())
 	if err != nil {
-		return tf.ErrorDiag(fmt.Sprintf("Could not retrieve group members for group with object ID: %q", d.Id()), err.Error(), "")
+		return tf.ErrorDiagF(err, "Could not retrieve group members for group with object ID: %q", d.Id())
 	}
 
-	if err := d.Set("members", members); err != nil {
-		return tf.ErrorDiag("Could not set attribute", err.Error(), "members")
+	if dg := tf.Set(d, "members", members); dg != nil {
+		return dg
 	}
 
 	owners, _, err := client.ListOwners(ctx, d.Id())
 	if err != nil {
-		return tf.ErrorDiag(fmt.Sprintf("Could not retrieve group owners for group with object ID: %q", d.Id()), err.Error(), "")
+		return tf.ErrorDiagF(err, "Could not retrieve group owners for group with object ID: %q", d.Id())
 	}
 
-	if err := d.Set("owners", owners); err != nil {
-		return tf.ErrorDiag("Could not set attribute", err.Error(), "owners")
+	if dg := tf.Set(d, "owners", owners); dg != nil {
+		return dg
 	}
 
 	return nil

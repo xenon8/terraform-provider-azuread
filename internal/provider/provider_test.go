@@ -39,7 +39,7 @@ func TestAccProvider_cliAuth(t *testing.T) {
 			TenantOnly:            true,
 		}
 
-		return buildClient(ctx, provider, builder, "")
+		return buildClient(ctx, provider, builder, "", false)
 	}
 
 	d := provider.Configure(ctx, terraform.NewResourceConfigRaw(nil))
@@ -71,7 +71,7 @@ func TestAccProvider_servicePrincipalAuth(t *testing.T) {
 			TenantOnly:               true,
 		}
 
-		return buildClient(ctx, provider, builder, "")
+		return buildClient(ctx, provider, builder, "", false)
 	}
 
 	d := provider.Configure(ctx, terraform.NewResourceConfigRaw(nil))

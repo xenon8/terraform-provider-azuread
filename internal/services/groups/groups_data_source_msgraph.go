@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -29,14 +30,14 @@ func groupsDataSourceReadMsGraph(ctx context.Context, d *schema.ResourceData, me
 			filter := fmt.Sprintf("displayName eq '%s'", displayName)
 			result, _, err := client.List(ctx, filter)
 			if err != nil {
-				return tf.ErrorDiag(fmt.Sprintf("No group found with display name: %q", v), err.Error(), "name")
+				return tf.ErrorDiagPathF(err, "name", "No group found with display name: %q", v)
 			}
 
 			count := len(*result)
 			if count > 1 {
-				return tf.ErrorDiag(fmt.Sprintf("More than one group found with display name: %q", displayName), err.Error(), "name")
+				return tf.ErrorDiagPathF(err, "name", "More than one group found with display name: %q", displayName)
 			} else if count == 0 {
-				return tf.ErrorDiag(fmt.Sprintf("No group found with display name: %q", v), err.Error(), "name")
+				return tf.ErrorDiagPathF(err, "name", "No group found with display name: %q", v)
 			}
 
 			groups = append(groups, (*result)[0])
@@ -48,9 +49,9 @@ func groupsDataSourceReadMsGraph(ctx context.Context, d *schema.ResourceData, me
 			group, status, err := client.Get(ctx, objectId)
 			if err != nil {
 				if status == http.StatusNotFound {
-					return tf.ErrorDiag(fmt.Sprintf("No group found with object ID: %q", objectId), "", "object_id")
+					return tf.ErrorDiagPathF(err, "object_id", "No group found with object ID: %q", objectId)
 				}
-				return tf.ErrorDiag(fmt.Sprintf("Retrieving group with object ID: %q", objectId), err.Error(), "")
+				return tf.ErrorDiagPathF(err, "object_id", "Retrieving group with object ID: %q", objectId)
 			}
 
 			groups = append(groups, *group)
@@ -58,14 +59,14 @@ func groupsDataSourceReadMsGraph(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	if len(groups) != expectedCount {
-		return tf.ErrorDiag("Unexpected number of groups returned", fmt.Sprintf("Expected: %d, Actual: %d", expectedCount, len(groups)), "")
+		return tf.ErrorDiagF(fmt.Errorf("Expected: %d, Actual: %d", expectedCount, len(groups)), "Unexpected number of groups returned")
 	}
 
 	displayNames := make([]string, 0, len(groups))
 	objectIds := make([]string, 0, len(groups))
 	for _, group := range groups {
 		if group.ID == nil || group.DisplayName == nil {
-			return tf.ErrorDiag("Bad API response", "API returned group with nil object ID", "")
+			return tf.ErrorDiagF(errors.New("API returned group with nil object ID"), "Bad API response")
 		}
 
 		objectIds = append(objectIds, *group.ID)
@@ -74,17 +75,17 @@ func groupsDataSourceReadMsGraph(ctx context.Context, d *schema.ResourceData, me
 
 	h := sha1.New()
 	if _, err := h.Write([]byte(strings.Join(displayNames, "-"))); err != nil {
-		return tf.ErrorDiag("Able to compute hash for names", err.Error(), "")
+		return tf.ErrorDiagF(err, "Unable to compute hash for names")
 	}
 
 	d.SetId("groups#" + base64.URLEncoding.EncodeToString(h.Sum(nil)))
 
-	if err := d.Set("object_ids", objectIds); err != nil {
-		return tf.ErrorDiag("Could not set attribute", err.Error(), "object_ids")
+	if dg := tf.Set(d, "object_ids", objectIds); dg != nil {
+		return dg
 	}
 
-	if err := d.Set("names", displayNames); err != nil {
-		return tf.ErrorDiag("Could not set attribute", err.Error(), "names")
+	if dg := tf.Set(d, "names", displayNames); dg != nil {
+		return dg
 	}
 
 	return nil

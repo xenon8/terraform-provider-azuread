@@ -2,7 +2,6 @@ package common
 
 import (
 	"fmt"
-	"github.com/manicminer/hamilton/auth"
 	"log"
 	"os"
 	"strings"
@@ -11,6 +10,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/hashicorp/go-azure-helpers/sender"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/meta"
+	"github.com/manicminer/hamilton/auth"
 
 	"github.com/terraform-providers/terraform-provider-azuread/version"
 )

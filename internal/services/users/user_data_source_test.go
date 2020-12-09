@@ -2,7 +2,6 @@ package users_test
 
 import (
 	"fmt"
-	"github.com/terraform-providers/terraform-provider-azuread/internal/services/domains"
 	"regexp"
 	"testing"
 
@@ -108,12 +107,14 @@ data "azuread_user" "test" {
 
 func (UserDataSource) byUserPrincipalNameNonexistent(data acceptance.TestData) string {
 	return fmt.Sprintf(`
-%[1]s
+data "azuread_domains" "test" {
+  only_initial = true
+}
 
 data "azuread_user" "test" {
-  user_principal_name = "not-a-real-user-%[2]d${data.azuread_domains.test.domains.0.domain_name}"
+  user_principal_name = "not-a-real-user-%[1]d${data.azuread_domains.test.domains.0.domain_name}"
 }
-`, domains.DomainsDataSource{}.onlyInitial(), data.RandomInteger)
+`, data.RandomInteger)
 }
 
 func (UserDataSource) byObjectId(data acceptance.TestData) string {
@@ -146,10 +147,12 @@ data "azuread_user" "test" {
 
 func (UserDataSource) byMailNicknameNonexistent(data acceptance.TestData) string {
 	return fmt.Sprintf(`
-%[1]s
+data "azuread_domains" "test" {
+  only_initial = true
+}
 
 data "azuread_user" "test" {
-  mail_nickname = "not-a-real-user-%[2]d${data.azuread_domains.test.domains.0.domain_name}"
+  mail_nickname = "not-a-real-user-%[1]d${data.azuread_domains.test.domains.0.domain_name}"
 }
-`, domains.DomainsDataSource{}.onlyInitial(), data.RandomInteger)
+`, data.RandomInteger)
 }

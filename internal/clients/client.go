@@ -2,11 +2,11 @@ package clients
 
 import (
 	"context"
-	"github.com/terraform-providers/terraform-provider-azuread/internal/common"
 
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 
+	"github.com/terraform-providers/terraform-provider-azuread/internal/common"
 	applications "github.com/terraform-providers/terraform-provider-azuread/internal/services/applications/client"
 	domains "github.com/terraform-providers/terraform-provider-azuread/internal/services/domains/client"
 	groups "github.com/terraform-providers/terraform-provider-azuread/internal/services/groups/client"
@@ -34,15 +34,15 @@ type Client struct {
 	Users             *users.Client
 }
 
-func (client *Client) build(ctx context.Context, o *common.ClientOptions) error {
+func (client *Client) build(ctx context.Context, o *common.ClientOptions) error { //nolint:unparam
 	autorest.Count429AsRetry = false
 	client.StopContext = ctx
 
-	client.Applications = applications.BuildClient(o)
-	client.Domains = domains.BuildClient(o)
-	client.Groups = groups.BuildClient(o)
-	client.ServicePrincipals = serviceprincipals.BuildClient(o)
-	client.Users = users.BuildClient(o)
+	client.Applications = applications.NewClient(o)
+	client.Domains = domains.NewClient(o)
+	client.Groups = groups.NewClient(o)
+	client.ServicePrincipals = serviceprincipals.NewClient(o)
+	client.Users = users.NewClient(o)
 
 	return nil
 }

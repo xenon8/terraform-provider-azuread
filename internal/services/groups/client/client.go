@@ -12,7 +12,7 @@ type Client struct {
 	MsClient  *clients.GroupsClient
 }
 
-func BuildClient(o *common.ClientOptions) *Client {
+func NewClient(o *common.ClientOptions) *Client {
 	aadClient := graphrbac.NewGroupsClientWithBaseURI(o.AadGraphEndpoint, o.TenantID)
 	o.ConfigureClient(&aadClient.Client, o.AadGraphAuthorizer)
 

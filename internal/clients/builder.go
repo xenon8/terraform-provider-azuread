@@ -3,11 +3,12 @@ package clients
 import (
 	"context"
 	"fmt"
-	"github.com/manicminer/hamilton/auth"
-	"github.com/terraform-providers/terraform-provider-azuread/internal/common"
 
 	"github.com/hashicorp/go-azure-helpers/authentication"
 	"github.com/hashicorp/go-azure-helpers/sender"
+	"github.com/manicminer/hamilton/auth"
+
+	"github.com/terraform-providers/terraform-provider-azuread/internal/common"
 )
 
 type ClientBuilder struct {
