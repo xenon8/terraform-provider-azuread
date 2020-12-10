@@ -25,6 +25,19 @@ func TestAccGroupDataSource_byName(t *testing.T) {
 	})
 }
 
+func TestAccGroupDataSource_byNameDeprecated(t *testing.T) {
+	data := acceptance.BuildTestData(t, "data.azuread_group", "test")
+
+	data.DataSourceTest(t, []resource.TestStep{
+		{
+			Config: GroupDataSource{}.nameDeprecated(data),
+			Check: resource.ComposeTestCheckFunc(
+				check.That(data.ResourceName).Key("name").HasValue(fmt.Sprintf("acctestGroup-%d", data.RandomInteger)),
+			),
+		},
+	})
+}
+
 func TestAccGroupDataSource_byCaseInsensitiveName(t *testing.T) {
 	data := acceptance.BuildTestData(t, "data.azuread_group", "test")
 
@@ -84,6 +97,16 @@ func (GroupDataSource) name(data acceptance.TestData) string {
 %[1]s
 
 data "azuread_group" "test" {
+  display_name = azuread_group.test.name
+}
+`, GroupResource{}.basic(data))
+}
+
+func (GroupDataSource) nameDeprecated(data acceptance.TestData) string {
+	return fmt.Sprintf(`
+%[1]s
+
+data "azuread_group" "test" {
   name = azuread_group.test.name
 }
 `, GroupResource{}.basic(data))
@@ -93,7 +116,7 @@ func (GroupDataSource) caseInsensitiveName(data acceptance.TestData) string {
 	return fmt.Sprintf(`
 %[1]s
 data "azuread_group" "test" {
-  name = upper(azuread_group.test.name)
+  display_name = upper(azuread_group.test.name)
 }
 `, GroupResource{}.basic(data))
 }

@@ -18,17 +18,15 @@ func groupDataSourceReadMsGraph(ctx context.Context, d *schema.ResourceData, met
 	client := meta.(*clients.Client).Groups.MsClient
 
 	var group models.Group
+	var displayName string
 
-	if objectId, ok := d.Get("object_id").(string); ok && objectId != "" {
-		g, status, err := client.Get(ctx, objectId)
-		if err != nil {
-			if status == http.StatusNotFound {
-				return tf.ErrorDiagPathF(nil, "object_id", "No group found with object ID: %q", objectId)
-			}
-			return tf.ErrorDiagPathF(err, "object_id", "Retrieving group with object ID: %q", objectId)
-		}
-		group = *g
-	} else if displayName, ok := d.Get("name").(string); ok && displayName != "" {
+	if v, ok := d.GetOk("display_name"); ok {
+		displayName = v.(string)
+	} else if v, ok := d.GetOk("name"); ok {
+		displayName = v.(string)
+	}
+
+	if displayName != "" {
 		filter := fmt.Sprintf("displayName eq '%s'", displayName)
 		groups, _, err := client.List(ctx, filter)
 		if err != nil {
@@ -43,8 +41,15 @@ func groupDataSourceReadMsGraph(ctx context.Context, d *schema.ResourceData, met
 		}
 
 		group = (*groups)[0]
-	} else {
-		return tf.ErrorDiagF(nil, "One of `object_id` or `name` must be specified")
+	} else if objectId, ok := d.Get("object_id").(string); ok && objectId != "" {
+		g, status, err := client.Get(ctx, objectId)
+		if err != nil {
+			if status == http.StatusNotFound {
+				return tf.ErrorDiagPathF(nil, "object_id", "No group found with object ID: %q", objectId)
+			}
+			return tf.ErrorDiagPathF(err, "object_id", "Retrieving group with object ID: %q", objectId)
+		}
+		group = *g
 	}
 
 	if group.ID == nil {
@@ -57,6 +62,11 @@ func groupDataSourceReadMsGraph(ctx context.Context, d *schema.ResourceData, met
 		return dg
 	}
 
+	if dg := tf.Set(d, "display_name", group.DisplayName); dg != nil {
+		return dg
+	}
+
+	// TODO: v2.0 remove this
 	if dg := tf.Set(d, "name", group.DisplayName); dg != nil {
 		return dg
 	}

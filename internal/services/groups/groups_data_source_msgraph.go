@@ -23,21 +23,28 @@ func groupsDataSourceReadMsGraph(ctx context.Context, d *schema.ResourceData, me
 	var groups []models.Group
 	var expectedCount int
 
-	if displayNames, ok := d.Get("display_names").([]interface{}); ok && len(displayNames) > 0 {
+	var displayNames []interface{}
+	if v, ok := d.GetOk("display_names"); ok {
+		displayNames = v.([]interface{})
+	} else if v, ok := d.GetOk("names"); ok {
+		displayNames = v.([]interface{})
+	}
+
+	if len(displayNames) > 0 {
 		expectedCount = len(displayNames)
 		for _, v := range displayNames {
 			displayName := v.(string)
 			filter := fmt.Sprintf("displayName eq '%s'", displayName)
 			result, _, err := client.List(ctx, filter)
 			if err != nil {
-				return tf.ErrorDiagPathF(err, "name", "No group found with display name: %q", v)
+				return tf.ErrorDiagPathF(err, "name", "No group found with display name: %q", displayName)
 			}
 
 			count := len(*result)
 			if count > 1 {
 				return tf.ErrorDiagPathF(err, "name", "More than one group found with display name: %q", displayName)
 			} else if count == 0 {
-				return tf.ErrorDiagPathF(err, "name", "No group found with display name: %q", v)
+				return tf.ErrorDiagPathF(err, "name", "No group found with display name: %q", displayName)
 			}
 
 			groups = append(groups, (*result)[0])
@@ -62,29 +69,33 @@ func groupsDataSourceReadMsGraph(ctx context.Context, d *schema.ResourceData, me
 		return tf.ErrorDiagF(fmt.Errorf("Expected: %d, Actual: %d", expectedCount, len(groups)), "Unexpected number of groups returned")
 	}
 
-	displayNames := make([]string, 0, len(groups))
-	objectIds := make([]string, 0, len(groups))
+	newDisplayNames := make([]string, 0, len(groups))
+	newObjectIds := make([]string, 0, len(groups))
 	for _, group := range groups {
 		if group.ID == nil || group.DisplayName == nil {
 			return tf.ErrorDiagF(errors.New("API returned group with nil object ID"), "Bad API response")
 		}
 
-		objectIds = append(objectIds, *group.ID)
-		displayNames = append(displayNames, *group.DisplayName)
+		newObjectIds = append(newObjectIds, *group.ID)
+		newDisplayNames = append(newDisplayNames, *group.DisplayName)
 	}
 
 	h := sha1.New()
-	if _, err := h.Write([]byte(strings.Join(displayNames, "-"))); err != nil {
+	if _, err := h.Write([]byte(strings.Join(newDisplayNames, "-"))); err != nil {
 		return tf.ErrorDiagF(err, "Unable to compute hash for names")
 	}
 
 	d.SetId("groups#" + base64.URLEncoding.EncodeToString(h.Sum(nil)))
 
-	if dg := tf.Set(d, "object_ids", objectIds); dg != nil {
+	if dg := tf.Set(d, "object_ids", newObjectIds); dg != nil {
 		return dg
 	}
 
-	if dg := tf.Set(d, "names", displayNames); dg != nil {
+	if dg := tf.Set(d, "display_names", newDisplayNames); dg != nil {
+		return dg
+	}
+
+	if dg := tf.Set(d, "names", newDisplayNames); dg != nil {
 		return dg
 	}
 

@@ -19,12 +19,17 @@ import (
 func groupResourceCreateAadGraph(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*clients.Client).Groups.AadClient
 
-	name := d.Get("name").(string)
+	var name string
+	if v, ok := d.GetOk("display_name"); ok && v.(string) != "" {
+		name = v.(string)
+	} else {
+		name = d.Get("name").(string)
+	}
 
 	if d.Get("prevent_duplicate_names").(bool) {
 		existingGroup, err := aadgraph.GroupFindByName(ctx, client, name)
 		if err != nil {
-			return tf.ErrorDiagPathF(err, "name", "Could not check for existing group(s)")
+			return tf.ErrorDiagPathF(err, "display_name", "Could not check for existing group(s)")
 		}
 		if existingGroup != nil {
 			if existingGroup.ObjectID == nil {
@@ -115,6 +120,11 @@ func groupResourceReadAadGraph(ctx context.Context, d *schema.ResourceData, meta
 		return dg
 	}
 
+	if dg := tf.Set(d, "display_name", resp.DisplayName); dg != nil {
+		return dg
+	}
+
+	// TODO: v2.0 remove this
 	if dg := tf.Set(d, "name", resp.DisplayName); dg != nil {
 		return dg
 	}

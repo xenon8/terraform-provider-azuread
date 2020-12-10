@@ -24,12 +24,19 @@ func groupsDataSourceReadAadGraph(ctx context.Context, d *schema.ResourceData, m
 	var groups []graphrbac.ADGroup
 	expectedCount := 0
 
-	if names, ok := d.Get("names").([]interface{}); ok && len(names) > 0 {
+	var names []string
+	if v, ok := d.GetOk("display_names"); ok {
+		names = v.([]string)
+	} else if v, ok := d.GetOk("names"); ok {
+		names = v.([]string)
+	}
+
+	if len(names) > 0 {
 		expectedCount = len(names)
-		for _, v := range names {
-			g, err := aadgraph.GroupGetByDisplayName(ctx, client, v.(string))
+		for _, name := range names {
+			g, err := aadgraph.GroupGetByDisplayName(ctx, client, name)
 			if err != nil {
-				return tf.ErrorDiagPathF(err, "name", "No group found with display name: %q", v)
+				return tf.ErrorDiagPathF(err, "name", "No group found with display name: %q", name)
 			}
 			groups = append(groups, *g)
 		}
@@ -53,29 +60,33 @@ func groupsDataSourceReadAadGraph(ctx context.Context, d *schema.ResourceData, m
 		return tf.ErrorDiagF(fmt.Errorf("Expected: %d, Actual: %d", expectedCount, len(groups)), "Unexpected number of groups returned")
 	}
 
-	names := make([]string, 0, len(groups))
-	oids := make([]string, 0, len(groups))
+	newNames := make([]string, 0, len(groups))
+	newObjectIds := make([]string, 0, len(groups))
 	for _, u := range groups {
 		if u.ObjectID == nil || u.DisplayName == nil {
 			return tf.ErrorDiagF(errors.New("API returned group with nil object ID"), "Bad API response")
 		}
 
-		oids = append(oids, *u.ObjectID)
-		names = append(names, *u.DisplayName)
+		newObjectIds = append(newObjectIds, *u.ObjectID)
+		newNames = append(newNames, *u.DisplayName)
 	}
 
 	h := sha1.New()
-	if _, err := h.Write([]byte(strings.Join(names, "-"))); err != nil {
+	if _, err := h.Write([]byte(strings.Join(newNames, "-"))); err != nil {
 		return tf.ErrorDiagF(err, "Unable to compute hash for names")
 	}
 
 	d.SetId("groups#" + base64.URLEncoding.EncodeToString(h.Sum(nil)))
 
-	if dg := tf.Set(d, "object_ids", oids); dg != nil {
+	if dg := tf.Set(d, "object_ids", newObjectIds); dg != nil {
 		return dg
 	}
 
-	if dg := tf.Set(d, "names", names); dg != nil {
+	if dg := tf.Set(d, "display_names", newNames); dg != nil {
+		return dg
+	}
+
+	if dg := tf.Set(d, "names", newNames); dg != nil {
 		return dg
 	}
 

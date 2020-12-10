@@ -23,8 +23,8 @@ func groupDataSource() *schema.Resource {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
+				ExactlyOneOf:     []string{"display_name", "name", "object_id"},
 				ValidateDiagFunc: validate.UUID,
-				ExactlyOneOf:     []string{"name"},
 			},
 
 			"description": {
@@ -32,12 +32,21 @@ func groupDataSource() *schema.Resource {
 				Computed: true,
 			},
 
+			"display_name": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				Computed:         true,
+				ExactlyOneOf:     []string{"display_name", "name", "object_id"},
+				ValidateDiagFunc: validate.NoEmptyStrings,
+			},
+
 			"name": {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
+				Deprecated:       "This property has been renamed to `display_name` and will be removed in v2.0 of this provider.",
+				ExactlyOneOf:     []string{"display_name", "name", "object_id"},
 				ValidateDiagFunc: validate.NoEmptyStrings,
-				ExactlyOneOf:     []string{"object_id"},
 			},
 
 			"members": {

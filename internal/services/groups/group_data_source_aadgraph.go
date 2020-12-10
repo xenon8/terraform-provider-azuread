@@ -18,6 +18,13 @@ func groupDataSourceReadAadGraph(ctx context.Context, d *schema.ResourceData, me
 	client := meta.(*clients.Client).Groups.AadClient
 
 	var group graphrbac.ADGroup
+	var name string
+
+	if v, ok := d.GetOk("display_name"); ok {
+		name = v.(string)
+	} else if v, ok := d.GetOk("name"); ok {
+		name = v.(string)
+	}
 
 	if objectId, ok := d.Get("object_id").(string); ok && objectId != "" {
 		resp, err := client.Get(ctx, objectId)
@@ -30,14 +37,12 @@ func groupDataSourceReadAadGraph(ctx context.Context, d *schema.ResourceData, me
 		}
 
 		group = resp
-	} else if name, ok := d.Get("name").(string); ok && name != "" {
+	} else if name != "" {
 		g, err := aadgraph.GroupGetByDisplayName(ctx, client, name)
 		if err != nil {
 			return tf.ErrorDiagPathF(err, "name", "No group found with display name: %q", name)
 		}
 		group = *g
-	} else {
-		return tf.ErrorDiagF(nil, "One of `object_id` or `name` must be specified")
 	}
 
 	if group.ObjectID == nil {
@@ -47,6 +52,10 @@ func groupDataSourceReadAadGraph(ctx context.Context, d *schema.ResourceData, me
 	d.SetId(*group.ObjectID)
 
 	if dg := tf.Set(d, "object_id", group.ObjectID); dg != nil {
+		return dg
+	}
+
+	if dg := tf.Set(d, "display_name", group.DisplayName); dg != nil {
 		return dg
 	}
 
