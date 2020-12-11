@@ -113,7 +113,7 @@ func (ApplicationCertificateResource) Exists(ctx context.Context, clients *clien
 		return nil, fmt.Errorf("parsing Application Certificate ID: %v", err)
 	}
 
-	resp, err := clients.Applications.ApplicationsClient.Get(ctx, id.ObjectId)
+	resp, err := clients.Applications.AadClient.Get(ctx, id.ObjectId)
 	if err != nil {
 		if utils.ResponseWasNotFound(resp.Response) {
 			return nil, fmt.Errorf("Application with object ID %q does not exist", id.ObjectId)
@@ -121,7 +121,7 @@ func (ApplicationCertificateResource) Exists(ctx context.Context, clients *clien
 		return nil, fmt.Errorf("failed to retrieve Application with object ID %q: %+v", id.ObjectId, err)
 	}
 
-	credentials, err := clients.Applications.ApplicationsClient.ListKeyCredentials(ctx, id.ObjectId)
+	credentials, err := clients.Applications.AadClient.ListKeyCredentials(ctx, id.ObjectId)
 	if err != nil {
 		return nil, fmt.Errorf("listing Key Credentials for Application %q: %+v", id.ObjectId, err)
 	}

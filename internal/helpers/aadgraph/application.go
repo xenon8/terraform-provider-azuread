@@ -4,154 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/services/graphrbac/1.6/graphrbac"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-
 	"github.com/terraform-providers/terraform-provider-azuread/internal/utils"
 )
-
-func SchemaAppRolesComputed() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
-		Computed: true,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
-				"id": {
-					Type:     schema.TypeString,
-					Computed: true,
-				},
-
-				"allowed_member_types": {
-					Type:     schema.TypeSet,
-					Computed: true,
-					Elem: &schema.Schema{
-						Type: schema.TypeString,
-					},
-				},
-
-				"description": {
-					Type:     schema.TypeString,
-					Computed: true,
-				},
-
-				"display_name": {
-					Type:     schema.TypeString,
-					Computed: true,
-				},
-
-				"is_enabled": {
-					Type:     schema.TypeBool,
-					Computed: true,
-				},
-
-				"value": {
-					Type:     schema.TypeString,
-					Computed: true,
-				},
-			},
-		},
-	}
-}
-
-func SchemaOauth2PermissionsComputed() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
-		Optional: true,
-		Computed: true,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
-				"admin_consent_description": {
-					Type:     schema.TypeString,
-					Computed: true,
-				},
-
-				"admin_consent_display_name": {
-					Type:     schema.TypeString,
-					Computed: true,
-				},
-
-				"id": {
-					Type:     schema.TypeString,
-					Computed: true,
-				},
-
-				"is_enabled": {
-					Type:     schema.TypeBool,
-					Computed: true,
-				},
-
-				"type": {
-					Type:     schema.TypeString,
-					Computed: true,
-				},
-
-				"user_consent_description": {
-					Type:     schema.TypeString,
-					Computed: true,
-				},
-
-				"user_consent_display_name": {
-					Type:     schema.TypeString,
-					Computed: true,
-				},
-
-				"value": {
-					Type:     schema.TypeString,
-					Computed: true,
-				},
-			},
-		},
-	}
-}
-
-func SchemaOptionalClaims() *schema.Schema {
-	return &schema.Schema{
-		Type:     schema.TypeList,
-		Optional: true,
-		Elem: &schema.Resource{
-			Schema: map[string]*schema.Schema{
-				"name": {
-					Type:     schema.TypeString,
-					Required: true,
-				},
-
-				"source": {
-					Type:     schema.TypeString,
-					Optional: true,
-					ValidateFunc: validation.StringInSlice(
-						[]string{"user"},
-						false,
-					),
-				},
-				"essential": {
-					Type:     schema.TypeBool,
-					Optional: true,
-					Default:  false,
-				},
-				"additional_properties": {
-					Type:     schema.TypeList,
-					Optional: true,
-					Elem: &schema.Schema{
-						Type: schema.TypeString,
-						ValidateFunc: validation.StringInSlice(
-							[]string{
-								"dns_domain_and_sam_account_name",
-								"emit_as_roles",
-								"netbios_domain_and_sam_account_name",
-								"sam_account_name",
-							},
-							false,
-						),
-					},
-				},
-			},
-		},
-	}
-}
 
 func FlattenAppRoles(in *[]graphrbac.AppRole) []map[string]interface{} {
 	if in == nil {
@@ -317,6 +176,32 @@ func ApplicationFindByName(ctx context.Context, client *graphrbac.ApplicationsCl
 	return nil, nil
 }
 
+func ApplicationSetOwnersTo(ctx context.Context, client *graphrbac.ApplicationsClient, id string, desiredOwners []string) error {
+	existingOwners, err := ApplicationAllOwners(ctx, client, id)
+	if err != nil {
+		return err
+	}
+
+	ownersForRemoval := utils.Difference(existingOwners, desiredOwners)
+	ownersToAdd := utils.Difference(desiredOwners, existingOwners)
+
+	// add owners first to prevent a possible situation where terraform revokes its own access before adding it back.
+	if err := ApplicationAddOwners(ctx, client, id, ownersToAdd); err != nil {
+		return err
+	}
+
+	for _, ownerToDelete := range ownersForRemoval {
+		log.Printf("[DEBUG] Removing owner with id %q from Application with id %q", ownerToDelete, id)
+		if resp, err := client.RemoveOwner(ctx, id, ownerToDelete); err != nil {
+			if !utils.ResponseWasNotFound(resp) {
+				return fmt.Errorf("deleting owner %q from Application with ID %q: %+v", ownerToDelete, id, err)
+			}
+		}
+	}
+
+	return nil
+}
+
 type AppRoleId struct {
 	ObjectId string
 	RoleId   string
@@ -478,7 +363,7 @@ func AppRolesSet(ctx context.Context, client *graphrbac.ApplicationsClient, appI
 		return nil
 	}
 
-	// first disable any existing permissions
+	// first disable any existing roles
 	properties := graphrbac.ApplicationUpdateParameters{
 		AppRoles: app.AppRoles,
 	}
@@ -493,7 +378,7 @@ func AppRolesSet(ctx context.Context, client *graphrbac.ApplicationsClient, appI
 		}
 	}
 
-	// then set the new permissions
+	// then set the new roles
 	properties = graphrbac.ApplicationUpdateParameters{
 		AppRoles: newRoles,
 	}

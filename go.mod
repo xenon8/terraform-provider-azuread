@@ -9,7 +9,9 @@ require (
 	github.com/hashicorp/go-cty v1.4.1-0.20200414143053-d3edf31b6320
 	github.com/hashicorp/go-uuid v1.0.1
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.0.3
-	github.com/manicminer/hamilton v0.0.0-20200826014717-c40ed579069d
+	github.com/manicminer/hamilton v0.0.0-20201209102914-a0134ea1a033
 )
 
 go 1.14
+
+replace github.com/manicminer/hamilton => /Users/tom/go/src/github.com/manicminer/hamilton

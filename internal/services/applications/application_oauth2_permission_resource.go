@@ -49,6 +49,7 @@ func applicationOAuth2PermissionResource() *schema.Resource {
 				ValidateDiagFunc: validate.NoEmptyStrings,
 			},
 
+			// TODO: v2.0 rename to `enabled`
 			"is_enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -94,7 +95,7 @@ func applicationOAuth2PermissionResource() *schema.Resource {
 }
 
 func applicationOAuth2PermissionResourceCreateUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*clients.Client).Applications.ApplicationsClient
+	client := meta.(*clients.Client).Applications.AadClient
 
 	objectId := d.Get("application_object_id").(string)
 
@@ -170,7 +171,7 @@ func applicationOAuth2PermissionResourceCreateUpdate(ctx context.Context, d *sch
 }
 
 func applicationOAuth2PermissionResourceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*clients.Client).Applications.ApplicationsClient
+	client := meta.(*clients.Client).Applications.AadClient
 
 	id, err := aadgraph.ParseOAuth2PermissionId(d.Id())
 	if err != nil {
@@ -240,7 +241,7 @@ func applicationOAuth2PermissionResourceRead(ctx context.Context, d *schema.Reso
 }
 
 func applicationOAuth2PermissionResourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*clients.Client).Applications.ApplicationsClient
+	client := meta.(*clients.Client).Applications.AadClient
 
 	id, err := aadgraph.ParseOAuth2PermissionId(d.Id())
 	if err != nil {

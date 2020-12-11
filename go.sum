@@ -248,6 +248,8 @@ github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
 github.com/manicminer/hamilton v0.0.0-20200826014717-c40ed579069d h1:WGHMqPO9Yhj4KUDrBs/WYWKAu2RHRNeYytBdKSnAa/0=
 github.com/manicminer/hamilton v0.0.0-20200826014717-c40ed579069d/go.mod h1:2lwoYzO6ZoWkg85QfLqU06AO8d5XmKxCG2YGUD+yaAg=
+github.com/manicminer/hamilton v0.0.0-20201209102914-a0134ea1a033 h1:oQij8OXEK4Bust3wRUpnyAPly0KE5MofkZB8Uf/4cis=
+github.com/manicminer/hamilton v0.0.0-20201209102914-a0134ea1a033/go.mod h1:2lwoYzO6ZoWkg85QfLqU06AO8d5XmKxCG2YGUD+yaAg=
 github.com/mattn/go-colorable v0.0.9/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=
 github.com/mattn/go-isatty v0.0.3/go.mod h1:M+lRXTBqGeGNdLjl/ufCoiOlB5xdOkqRJdNxMWT7Zi4=
 github.com/mattn/go-isatty v0.0.4/go.mod h1:M+lRXTBqGeGNdLjl/ufCoiOlB5xdOkqRJdNxMWT7Zi4=

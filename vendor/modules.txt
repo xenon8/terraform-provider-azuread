@@ -249,7 +249,7 @@ github.com/jstemmer/go-junit-report/formatter
 github.com/jstemmer/go-junit-report/parser
 # github.com/kevinburke/ssh_config v0.0.0-20190725054713-01f96b0aa0cd
 github.com/kevinburke/ssh_config
-# github.com/manicminer/hamilton v0.0.0-20200826014717-c40ed579069d
+# github.com/manicminer/hamilton v0.0.0-20201209102914-a0134ea1a033 => /Users/tom/go/src/github.com/manicminer/hamilton
 ## explicit
 github.com/manicminer/hamilton/auth
 github.com/manicminer/hamilton/base
@@ -494,3 +494,4 @@ google.golang.org/protobuf/types/known/timestamppb
 google.golang.org/protobuf/types/pluginpb
 # gopkg.in/warnings.v0 v0.1.2
 gopkg.in/warnings.v0
+# github.com/manicminer/hamilton => /Users/tom/go/src/github.com/manicminer/hamilton

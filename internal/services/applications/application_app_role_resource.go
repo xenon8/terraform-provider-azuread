@@ -62,6 +62,7 @@ func applicationAppRoleResource() *schema.Resource {
 				ValidateDiagFunc: validate.NoEmptyStrings,
 			},
 
+			// TODO: v2.0 rename to `enabled`
 			"is_enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -85,7 +86,7 @@ func applicationAppRoleResource() *schema.Resource {
 }
 
 func applicationAppRoleResourceCreateUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*clients.Client).Applications.ApplicationsClient
+	client := meta.(*clients.Client).Applications.AadClient
 
 	objectId := d.Get("application_object_id").(string)
 
@@ -167,7 +168,7 @@ func applicationAppRoleResourceCreateUpdate(ctx context.Context, d *schema.Resou
 }
 
 func applicationAppRoleResourceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*clients.Client).Applications.ApplicationsClient
+	client := meta.(*clients.Client).Applications.AadClient
 
 	id, err := aadgraph.ParseAppRoleId(d.Id())
 	if err != nil {
@@ -229,7 +230,7 @@ func applicationAppRoleResourceRead(ctx context.Context, d *schema.ResourceData,
 }
 
 func applicationAppRoleResourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*clients.Client).Applications.ApplicationsClient
+	client := meta.(*clients.Client).Applications.AadClient
 
 	id, err := aadgraph.ParseAppRoleId(d.Id())
 	if err != nil {

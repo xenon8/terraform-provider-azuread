@@ -90,7 +90,47 @@ func applicationData() *schema.Resource {
 				Computed: true,
 			},
 
-			"app_roles": aadgraph.SchemaAppRolesComputed(),
+			"app_roles": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"allowed_member_types": {
+							Type:     schema.TypeSet,
+							Computed: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+
+						"description": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"display_name": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						// TODO: v2.0 rename to `enabled`
+						"is_enabled": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+
+						"value": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+					},
+				},
+			},
 
 			"optional_claims": {
 				Type:     schema.TypeList,
@@ -98,10 +138,10 @@ func applicationData() *schema.Resource {
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"access_token": aadgraph.SchemaOptionalClaims(),
-						"id_token":     aadgraph.SchemaOptionalClaims(),
+						"access_token": schemaOptionalClaims(),
+						"id_token":     schemaOptionalClaims(),
 						// TODO: enable when https://github.com/Azure/azure-sdk-for-go/issues/9714 resolved
-						//"saml_token": aadgraph.SchemaOptionalClaims(),
+						//"saml_token": schemaOptionalClaims(),
 					},
 				},
 			},
@@ -145,13 +185,61 @@ func applicationData() *schema.Resource {
 				},
 			},
 
-			"oauth2_permissions": aadgraph.SchemaOauth2PermissionsComputed(),
+			"oauth2_permissions": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"admin_consent_description": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"admin_consent_display_name": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"id": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						// TODO: v2.0 rename to `enabled`
+						"is_enabled": {
+							Type:     schema.TypeBool,
+							Computed: true,
+						},
+
+						"type": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"user_consent_description": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"user_consent_display_name": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+
+						"value": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
 
 func applicationDataRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*clients.Client).Applications.ApplicationsClient
+	client := meta.(*clients.Client).Applications.AadClient
 
 	var app graphrbac.Application
 
@@ -257,11 +345,11 @@ func applicationDataRead(ctx context.Context, d *schema.ResourceData, meta inter
 		return dg
 	}
 
-	if dg := tf.Set(d, "required_resource_access", flattenApplicationRequiredResourceAccess(app.RequiredResourceAccess)); dg != nil {
+	if dg := tf.Set(d, "required_resource_access", flattenApplicationRequiredResourceAccessAad(app.RequiredResourceAccess)); dg != nil {
 		return dg
 	}
 
-	if dg := tf.Set(d, "optional_claims", flattenApplicationOptionalClaims(app.OptionalClaims)); dg != nil {
+	if dg := tf.Set(d, "optional_claims", flattenApplicationOptionalClaimsAad(app.OptionalClaims)); dg != nil {
 		return dg
 	}
 

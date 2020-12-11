@@ -45,9 +45,9 @@ func servicePrincipalData() *schema.Resource {
 				ConflictsWith:    []string{"object_id", "display_name"},
 			},
 
-			"app_roles": aadgraph.SchemaAppRolesComputed(),
+			"app_roles": schemaAppRolesComputed(),
 
-			"oauth2_permissions": aadgraph.SchemaOauth2PermissionsComputed(),
+			"oauth2_permissions": schemaOauth2PermissionsComputed(),
 		},
 	}
 }

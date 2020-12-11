@@ -58,9 +58,9 @@ func servicePrincipalResource() *schema.Resource {
 				Computed: true,
 			},
 
-			"app_roles": aadgraph.SchemaAppRolesComputed(),
+			"app_roles": schemaAppRolesComputed(),
 
-			"oauth2_permissions": aadgraph.SchemaOauth2PermissionsComputed(),
+			"oauth2_permissions": schemaOauth2PermissionsComputed(),
 
 			"tags": {
 				Type:     schema.TypeSet,

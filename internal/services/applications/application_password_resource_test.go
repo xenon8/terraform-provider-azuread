@@ -93,7 +93,7 @@ func (r ApplicationPasswordResource) Exists(ctx context.Context, clients *client
 		return nil, fmt.Errorf("parsing Application Password ID: %v", err)
 	}
 
-	resp, err := clients.Applications.ApplicationsClient.Get(ctx, id.ObjectId)
+	resp, err := clients.Applications.AadClient.Get(ctx, id.ObjectId)
 	if err != nil {
 		if utils.ResponseWasNotFound(resp.Response) {
 			return nil, fmt.Errorf("Application with object ID %q does not exist", id.ObjectId)
@@ -101,7 +101,7 @@ func (r ApplicationPasswordResource) Exists(ctx context.Context, clients *client
 		return nil, fmt.Errorf("failed to retrieve Application with object ID %q: %+v", id.ObjectId, err)
 	}
 
-	credentials, err := clients.Applications.ApplicationsClient.ListPasswordCredentials(ctx, id.ObjectId)
+	credentials, err := clients.Applications.AadClient.ListPasswordCredentials(ctx, id.ObjectId)
 	if err != nil {
 		return nil, fmt.Errorf("listing Password Credentials for Application %q: %+v", id.ObjectId, err)
 	}

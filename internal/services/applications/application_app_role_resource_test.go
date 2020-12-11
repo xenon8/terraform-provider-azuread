@@ -102,7 +102,7 @@ func (a ApplicationAppRoleResource) Exists(ctx context.Context, clients *clients
 		return nil, fmt.Errorf("parsing App Role ID: %v", err)
 	}
 
-	resp, err := clients.Applications.ApplicationsClient.Get(ctx, id.ObjectId)
+	resp, err := clients.Applications.AadClient.Get(ctx, id.ObjectId)
 	if err != nil {
 		if utils.ResponseWasNotFound(resp.Response) {
 			return nil, fmt.Errorf("Application with object ID %q does not exist", id.ObjectId)

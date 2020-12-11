@@ -31,7 +31,7 @@ func applicationCertificateResource() *schema.Resource {
 }
 
 func applicationCertificateResourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*clients.Client).Applications.ApplicationsClient
+	client := meta.(*clients.Client).Applications.AadClient
 
 	objectId := d.Get("application_object_id").(string)
 
@@ -79,7 +79,7 @@ func applicationCertificateResourceCreate(ctx context.Context, d *schema.Resourc
 }
 
 func applicationCertificateResourceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*clients.Client).Applications.ApplicationsClient
+	client := meta.(*clients.Client).Applications.AadClient
 
 	id, err := aadgraph.ParseCertificateId(d.Id())
 	if err != nil {
@@ -146,7 +146,7 @@ func applicationCertificateResourceRead(ctx context.Context, d *schema.ResourceD
 }
 
 func applicationCertificateResourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*clients.Client).Applications.ApplicationsClient
+	client := meta.(*clients.Client).Applications.AadClient
 
 	id, err := aadgraph.ParseCertificateId(d.Id())
 	if err != nil {

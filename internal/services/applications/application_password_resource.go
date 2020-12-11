@@ -43,7 +43,7 @@ func applicationPasswordResource() *schema.Resource {
 }
 
 func applicationPasswordResourceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*clients.Client).Applications.ApplicationsClient
+	client := meta.(*clients.Client).Applications.AadClient
 
 	objectId := d.Get("application_object_id").(string)
 
@@ -90,7 +90,7 @@ func applicationPasswordResourceCreate(ctx context.Context, d *schema.ResourceDa
 }
 
 func applicationPasswordResourceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*clients.Client).Applications.ApplicationsClient
+	client := meta.(*clients.Client).Applications.AadClient
 
 	id, err := aadgraph.ParsePasswordId(d.Id())
 	if err != nil {
@@ -156,7 +156,7 @@ func applicationPasswordResourceRead(ctx context.Context, d *schema.ResourceData
 }
 
 func applicationPasswordResourceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*clients.Client).Applications.ApplicationsClient
+	client := meta.(*clients.Client).Applications.AadClient
 
 	id, err := aadgraph.ParsePasswordId(d.Id())
 	if err != nil {
